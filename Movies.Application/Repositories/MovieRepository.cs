@@ -42,4 +42,10 @@ public class MovieRepository : IMovieRepository
 
         return Task.FromResult(count > 0);
     }
+
+    public Task<Movie?> GetBySlugAsync(string slug)
+    {
+        var movie = _repository.FirstOrDefault(x => x.Slug == slug);
+        return Task.FromResult(movie);
+    }
 }
