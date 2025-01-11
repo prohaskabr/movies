@@ -6,11 +6,11 @@ using Movies.Contracts.Requests;
 
 namespace Movies.Api.Controllers;
 
-[Authorize]
 [ApiController]
 public class MoviesController(IMovieService movieService) : ControllerBase
 {
 
+    [Authorize(AuthConstants.TrustedMemberClaimName)]
     [HttpPost(ApiEndpoints.Movies.Create)]
     public async Task<IActionResult> Create([FromBody] CreateMovieRequest request, CancellationToken token)
     {
@@ -42,6 +42,7 @@ public class MoviesController(IMovieService movieService) : ControllerBase
         return Ok(movies.MapToMoviesResponse());
     }
 
+    [Authorize(AuthConstants.TrustedMemberClaimName)]
     [HttpPut(ApiEndpoints.Movies.Update)]
     public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateMovieRequest request, CancellationToken token)
     {
@@ -55,6 +56,7 @@ public class MoviesController(IMovieService movieService) : ControllerBase
         return Ok(updatedMovie.MapToMovieResponse());
     }
 
+    [Authorize(AuthConstants.AdminUserPolicyName)]
     [HttpDelete(ApiEndpoints.Movies.Delete)]
     public async Task<IActionResult> Felete([FromRoute] Guid id, CancellationToken token)
     {
