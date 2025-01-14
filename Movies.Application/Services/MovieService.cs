@@ -4,7 +4,7 @@ using Movies.Application.Repositories;
 
 namespace Movies.Application.Services;
 
-public class MovieService(IMovieRepository repository, IValidator<Movie> movieValidator) : IMovieService
+public class MovieService(IMovieRepository repository, IRatingRepository ratingRepository, IValidator<Movie> movieValidator) : IMovieService
 {
 
     public async Task<bool> CreateAsync(Movie movie, CancellationToken token = default)
@@ -13,7 +13,7 @@ public class MovieService(IMovieRepository repository, IValidator<Movie> movieVa
 
         return await repository.CreateAsync(movie, token);
     }
-    public async Task<Movie?> UpdateAsync(Movie movie, CancellationToken token = default)
+    public async Task<Movie?> UpdateAsync(Movie movie, Guid? userId, CancellationToken token = default)
     {
         await movieValidator.ValidateAndThrowAsync(movie, token);
 
@@ -23,6 +23,17 @@ public class MovieService(IMovieRepository repository, IValidator<Movie> movieVa
             return null;
 
         await repository.UpdateAsync(movie, token);
+
+        if (!userId.HasValue)
+        {
+            var rating = await ratingRepository.GetRatingAsync(movie.Id, token);
+            movie.Rating = rating;
+            return movie;
+        }
+
+        var ratings = await ratingRepository.GetRatingAsync(movie.Id, userId.Value, token);
+        movie.Rating = ratings.Rating;
+        movie.UserRating = ratings.UserRating;
 
         return movie;
     }
@@ -37,18 +48,18 @@ public class MovieService(IMovieRepository repository, IValidator<Movie> movieVa
         return repository.ExistsByIdAsync(id, token);
     }
 
-    public Task<IEnumerable<Movie>> GetAllAsync(CancellationToken token = default)
+    public Task<IEnumerable<Movie>> GetAllAsync(Guid? userId, CancellationToken token = default)
     {
-        return repository.GetAllAsync(token);
+        return repository.GetAllAsync(userId, token);
     }
 
-    public Task<Movie?> GetByIdAsync(Guid id, CancellationToken token = default)
+    public Task<Movie?> GetByIdAsync(Guid id, Guid? userId, CancellationToken token = default)
     {
-        return repository.GetByIdAsync(id, token);
+        return repository.GetByIdAsync(id, userId, token);
     }
 
-    public Task<Movie?> GetBySlugAsync(string slug, CancellationToken token = default)
+    public Task<Movie?> GetBySlugAsync(string slug, Guid? userId, CancellationToken token = default)
     {
-        return repository.GetBySlugAsync(slug, token);
+        return repository.GetBySlugAsync(slug, userId, token);
     }
 }
