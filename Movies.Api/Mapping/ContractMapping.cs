@@ -20,7 +20,7 @@ public static class ContractMapping
     public static Movie MapToMovie(this UpdateMovieRequest request, Guid id)
     {
         return new Movie()
-        {            
+        {
             Id = id,
             Title = request.Title,
             YearOfRelease = request.YearOfRelease,
@@ -38,13 +38,20 @@ public static class ContractMapping
             YearOfRelease = movie.YearOfRelease,
             Genres = movie.Genres,
             UserRating = movie.UserRating,
-            Rating = movie.Rating,            
+            Rating = movie.Rating,
         };
     }
 
-    public static IEnumerable<MovieResponse> MapToMoviesResponse(this IEnumerable<Movie> movies)
+    public static MoviesResponse MapToMoviesResponse(this IEnumerable<Movie> movies,
+        int page, int pageSize, int total)
     {
-        return movies.Select(x => x.MapToMovieResponse()).ToArray();
+        return new MoviesResponse
+        {
+            Items = movies.Select(MapToMovieResponse),
+            Page = page,
+            PageSize = pageSize,
+            Total = total
+        };
     }
 
     public static MovieRatingResponse MapToRatingResponse(this MovieRating movieRating)
@@ -52,8 +59,8 @@ public static class ContractMapping
         return new MovieRatingResponse()
         {
             MovieId = movieRating.MovieId,
-            Slug   = movieRating.Slug,
-            Rating  = movieRating.Rating,            
+            Slug = movieRating.Slug,
+            Rating = movieRating.Rating,
         };
     }
 
@@ -62,5 +69,22 @@ public static class ContractMapping
         return rating.Select(x => x.MapToRatingResponse()).ToArray();
     }
 
-    
+    public static GetAllMoviesOptions MapToOptions(this GetAllMoviesRequest request)
+    {
+        return new GetAllMoviesOptions
+        {
+            Title = request.Title,
+            Year = request.Year,
+            SortField = request.SortBy?.Trim('+', '-'),
+            SortOrder = request.SortBy is null ? SortOrder.Unsorted : request.SortBy.StartsWith('-') ? SortOrder.Descending : SortOrder.Ascending,
+            Page = request.Page,
+            PageSize = request.PagedSize
+        };
+    }
+    public static GetAllMoviesOptions WithUserId(this GetAllMoviesOptions options, Guid? userId)
+    {
+
+        options.UserId = userId;
+        return options;
+    }
 }

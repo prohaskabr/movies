@@ -67,11 +67,20 @@ public class MovieRepository(IDbConnectionFactory connectionFactory) : IMovieRep
         return movie;
     }
 
-    public async Task<IEnumerable<Movie>> GetAllAsync(Guid? userId = default, CancellationToken token = default)
+    public async Task<IEnumerable<Movie>> GetAllAsync(GetAllMoviesOptions options, CancellationToken token = default)
     {
+        var orderClause = string.Empty;
+        if (options.SortField is not null)
+        {
+            orderClause =  $"""
+                , m.{options.SortField}
+                order by m.{options.SortField} {(options.SortOrder == SortOrder.Ascending ? "asc" : "desc")}
+                """;
+        }
+
         using var connection = await connectionFactory.CreateConnectionAsync(token);
         var result = await connection.QueryAsync(
-            new CommandDefinition("""
+            new CommandDefinition($"""
             select
                 m.*,
                 string_agg(distinct g.name, ',') as genres,
@@ -82,8 +91,20 @@ public class MovieRepository(IDbConnectionFactory connectionFactory) : IMovieRep
                 left join genres g on m.id = g.movieid
                 left join ratings r on m.id = r.movieid
                 left join ratings myr on m.id = myr.movieid and myr.userid = @userId                
-            group by id, userrating
-            """, new { userId }, cancellationToken: token));
+            where
+                (@title is null or m.title like ('%' || @title || '%'))
+                and (@year is null or m.yearofrelease = @year) 
+            group by id, userrating {orderClause}
+            limit  @pageSize
+            offset @pageOffset
+            """, new { 
+                userId = options.UserId,
+                title = options.Title,
+                year = options.Year,
+                pageSize = options.PageSize,
+                pageOffset = (options.Page - 1 ) * options.PageSize,
+            
+            }, cancellationToken: token));
 
         return result.Select(x => new Movie
         {
@@ -182,5 +203,19 @@ public class MovieRepository(IDbConnectionFactory connectionFactory) : IMovieRep
             """", new { Id = id }, cancellationToken: token));
 
         return total > 0;
+    }
+
+    public async Task<int> GetCountByAsync(string? title, int? year, CancellationToken token  = default)
+    {
+        using var conn = await connectionFactory.CreateConnectionAsync(token);
+        var total = await conn.ExecuteScalarAsync<int>(
+          new CommandDefinition(""""
+            select Count(*) from movies m
+            where
+             (@title is null or m.title like ('%' || @title || '%'))
+             and (@year is null or m.yearofrelease = @year) 
+            """", new { title, year }, cancellationToken: token));
+
+        return total;
     }
 }

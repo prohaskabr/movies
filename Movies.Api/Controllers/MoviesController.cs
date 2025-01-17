@@ -11,7 +11,7 @@ namespace Movies.Api.Controllers;
 public class MoviesController(IMovieService movieService) : ControllerBase
 {
 
-    [Authorize(AuthConstants.TrustedMemberClaimName)]
+    [Authorize(AuthConstants.TrustedMemberPolicyName)]
     [HttpPost(ApiEndpoints.Movies.Create)]
     public async Task<IActionResult> Create([FromBody] CreateMovieRequest request, CancellationToken token)
     {
@@ -38,16 +38,17 @@ public class MoviesController(IMovieService movieService) : ControllerBase
     }
 
     [HttpGet(ApiEndpoints.Movies.GetAll)]
-    public async Task<IActionResult> GetAll(CancellationToken token)
+    public async Task<IActionResult> GetAll([FromQuery] GetAllMoviesRequest request, CancellationToken token)
     {
-        var userId = HttpContext.GetUserId();
+        var options = request.MapToOptions().WithUserId(HttpContext.GetUserId());
 
-        var movies = await movieService.GetAllAsync(userId, token);
+        var movies = await movieService.GetAllAsync(options, token);
+        var moviesCount = await movieService.GetCountByAsync(options.Title, options.Year, token);
 
-        return Ok(movies.MapToMoviesResponse());
+        return Ok(movies.MapToMoviesResponse(options.Page, options.PageSize, moviesCount));
     }
 
-    [Authorize(AuthConstants.TrustedMemberClaimName)]
+    [Authorize(AuthConstants.TrustedMemberPolicyName)]
     [HttpPut(ApiEndpoints.Movies.Update)]
     public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateMovieRequest request, CancellationToken token)
     {
