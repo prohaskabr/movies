@@ -57,6 +57,19 @@ builder.Services.AddApiVersioning(x =>
 }).AddMvc().AddApiExplorer();
 
 
+builder.Services.AddOutputCache(x =>
+{
+
+    x.AddBasePolicy(c => c.Cache());
+    x.AddPolicy("MovieCache", c =>
+    {
+        c.Cache()
+        .Expire(TimeSpan.FromMinutes(5))
+        .SetVaryByQuery(["title", "year", "sortBy", "page", "pageSize"])
+        .Tag("movies");
+    });
+
+});
 builder.Services.AddResponseCaching();
 
 builder.Services.AddControllers();
@@ -93,6 +106,7 @@ app.MapHealthChecks("_health");
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseOutputCache();
 app.UseResponseCaching();
 
 app.UseMiddleware<ValidationMappingMiddleware>();
