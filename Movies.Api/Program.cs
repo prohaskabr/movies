@@ -57,7 +57,7 @@ builder.Services.AddApiVersioning(x =>
 }).AddMvc().AddApiExplorer();
 
 
-
+builder.Services.AddResponseCaching();
 
 builder.Services.AddControllers();
 builder.Services.AddHealthChecks()
@@ -92,6 +92,8 @@ app.MapHealthChecks("_health");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseResponseCaching();
 
 app.UseMiddleware<ValidationMappingMiddleware>();
 app.MapControllers();
