@@ -89,7 +89,7 @@ public class MoviesController(IMovieService movieService, IOutputCacheStore cach
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Felete([FromRoute] Guid id, CancellationToken token)
-    {
+    {        
         var deleted = await movieService.DeleteByIdAsync(id, token);
 
         if (!deleted)
