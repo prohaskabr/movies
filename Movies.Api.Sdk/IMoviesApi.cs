@@ -12,4 +12,13 @@ public interface IMoviesApi
 
     [Get(ApiEndpoints.Movies.GetAll)]
     Task<MoviesResponse> GetMoviesAsync(GetAllMoviesRequest request);
+
+    [Post(ApiEndpoints.Movies.Create)]
+    Task<MoviesResponse> CreateMovieAsync(CreateMovieRequest request);
+
+    [Put(ApiEndpoints.Movies.Update)]
+    Task<MoviesResponse> UpdateMovieAsync(Guid id, UpdateMovieRequest request);
+
+    [Delete(ApiEndpoints.Movies.Delete)]
+    Task<MoviesResponse> DeleteMovieAsync(Guid id);
 }
